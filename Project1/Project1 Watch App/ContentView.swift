@@ -3,51 +3,82 @@ import SwiftUI
 struct ContentView: View {
     @State private var notes = [Note]()
     @State private var text = ""
-
+    
+    @AppStorage("lineCount") var lineCount = 1
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                HStack {
-                    TextField("Add new note", text: $text)
-                    Button(action: {
-                        guard !text.isEmpty else { return }
-                        
-                        let note = Note(id: UUID(), text: text)
-                        notes.append(note)
-                        text = ""
-                    }) {
-                        Image(systemName: "plus").padding()
-                    }
-                    .fixedSize()
-                    .tint(.blue)
-                }
+        NavigationStack {
+            HStack {
+                TextField("Add new note", text: $text)
                 
-                List {
-                    ForEach(0..<notes.count, id: \.self) { i in
-                        NavigationLink {
-                            DetailView(index: i, note: notes[i], totalNotes: notes.count)
-                        } label: {
-                            Text(notes[i].text)
-                                .lineLimit(3)
-                        }
-                    }
-                    .onDelete(perform: delete)
+                Button {
+                    guard text.isEmpty == false else { return }
+                    
+                    let note = Note(id: UUID(), text: text)
+                    notes.append(note)
+                    text = ""
+                    save()
+                } label: {
+                    Image(systemName: "plus")
+                        .padding()
                 }
-                .navigationTitle("NoteDictate")
-                .navigationBarTitleDisplayMode(.inline)
+                .fixedSize()
+                .tint(.blue)
             }
-            .padding()
+            
+            List {
+                ForEach(0..<notes.count, id: \.self) { i in
+                    NavigationLink {
+                        DetailView(index: i, note: notes[i])
+                    } label: {
+                        Text(notes[i].text)
+                            .lineLimit(lineCount)
+                    }
+                }
+                .onDelete(perform: delete)
+                
+                Button("Lines: \(lineCount)") {
+                    lineCount += 1
+
+                    if lineCount == 4 {
+                        lineCount = 1
+                    }
+                }
+            }
+            .navigationTitle("NoteDictate")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear(perform: load)
         }
     }
     
-    func delete(at offsets: IndexSet) {
+    func delete(offsets: IndexSet) {
         withAnimation {
             notes.remove(atOffsets: offsets)
+            save()
+        }
+    }
+    
+    func load() {
+        do {
+            let url = URL.documentsDirectory.appending(path: "notes")
+            let data = try Data(contentsOf: url)
+            notes = try JSONDecoder().decode([Note].self, from: data)
+        } catch {
+            // do nothing
+        }
+    }
+    
+    func save() {
+        do {
+            let data = try JSONEncoder().encode(notes)
+            let url = URL.documentsDirectory.appending(path: "notes")
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+        } catch {
+            print("Save failed")
         }
     }
 }
 
-// For Preview
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
