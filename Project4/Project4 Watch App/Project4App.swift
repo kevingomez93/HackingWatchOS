@@ -10,8 +10,11 @@ import SwiftUI
 @main
 struct Project4_Watch_AppApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+            WindowGroup {
+                TabView {
+                     ContentView()
+                     CurrenciesView()
+                 }
+            }
         }
-    }
 }
