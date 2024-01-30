@@ -18,6 +18,7 @@ struct ResultsView: View {
         case fetching, success, failed
     }
     
+    
     @State private var fetchState = FetchState.fetching
     @State private var fetchedCurrencies = [(symbol: String, rate: Double)]()
     @State private var request: AnyCancellable?
